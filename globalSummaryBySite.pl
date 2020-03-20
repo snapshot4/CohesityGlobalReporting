@@ -5,8 +5,9 @@ our $version=1.0.2;
 # Name: globalSummaryBySite.pl
 # Description: This script was written for a Cohesity cluster to give better visibility into a large multisite deployment.  #
 # 1.0.0 - Initial program creation showing num of success, failures, active and success rate.
-# 1.0.1 - Added debug to assist if problems arise in script.
-# 1.0.2 - Added display variable to output to display as tab seperated or in HTML format.
+# 1.0.0 - Added debug to assist if problems arise in script.
+# 1.0.0 - Added display variable to output to display as tab seperated or in HTML format.
+# 1.0.1 - Externalized the cluster list so to make this list more secure.
 
 # Modules
 use strict;
@@ -14,20 +15,15 @@ use DBI;
 use REST::Client;
 use JSON;
 use Time::HiRes;
+use clusterInfo;
 
 # Global Variables
-my $display=0; #(0-Standard Display, 1-HTML)
+my $display=1; #(0-Standard Display, 1-HTML)
 my $debug=0; #(0-No log messages, 1-Info messages, 2-Debug messages)
 my $hoursAgo=24;
-my @clusters = (
-  {
-    'cluster'		=>	'', 
-    'username'		=>	'',
-    'password'		=>	'',
-    'domain'		=>	'LOCAL',
-    'databaseName'	=>	'postgres',
-  },
-);
+my $title="Global Cohesity Report by Site";
+my %sites;
+my @clusters=clusterInfo::clusterList();
 
 #Set Environment Variable to no verify certs
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
@@ -71,35 +67,52 @@ sub getDbInfo {
   }
 }
 
-sub dbConnect {
+sub printHeader {
+  printf "Cluster\t\tTotal\tSuccess\tFailed\tSuccess Rate\n" if ($display==0);
+  printf "<TABLE BORDER=1 ALIGN=center><TR BGCOLOR=lightgreen><TD ALIGN=center colspan='5'>$_[0] Report</TD></TR>" if ($display==1);
+  printf "<TR BGCOLOR=lightgreen><TD>Cohesity Cluster</TD><TD>Total</TD><TD>Success</TD><TD>Failed</TD><TD>Success Rate</TD></TR>" if ($display==1);
+}
+
+sub dataGather {
   my $hoursAgoUsecs=($hoursAgo*3600000000);
   my $curTime=time*1000*1000;
   print "$curTime\n" if ($debug>=2);
   my $startTimeUsecs=($curTime-$hoursAgoUsecs);
   print "$startTimeUsecs\n" if ($debug>=2);
-  printf "Cluster\t\tTotal\tSuccess\tFailed\tSuccess Rate\n" if ($display==0);
-  printf "<HTML><HEAD></HEAD><BODY><TABLE BORDER=1 ALIGN=center><TR BGCOLOR=lightgreen><TD>Cohesity Cluster</TD><TD>Total</TD><TD>Success</TD><TD>Failed</TD><TD>Success Rate</TD></TR>" if ($display==1);
   foreach my $href (@clusters){
     print "Connecting to Database $href->{'databaseName'}\n" if ($debug>=2);
     my $dbh = DBI -> connect("dbi:Pg:dbname=$href->{'databaseName'};host=$href->{'nodeIp'};port=$href->{'port'}",$href->{'defaultUsername'},$href->{'defaultPassword'}) or die $DBI::errstr;
-    my $sql = "SELECT SUM(total_num_entities), SUM(success_num_entities), SUM(failure_num_entities) FROM reporting.protection_job_runs WHERE start_time_usecs >= $startTimeUsecs";
+    my $sql = "SELECT SUM(total_num_entities),SUM(success_num_entities),SUM(failure_num_entities),cluster_name 
+               FROM reporting.protection_job_runs,reporting.cluster 
+               WHERE start_time_usecs >= $startTimeUsecs
+               AND reporting.protection_job_runs.cluster_id = reporting.cluster.cluster_id
+               GROUP BY cluster_name
+               ORDER BY cluster_name
+              ";
     my $sth = $dbh->prepare($sql);
     print "Executing Query\n" if ($debug>=2);
     $sth->execute() or die DBI::errstr;
-    while (my @row=$sth->fetchrow_array){
-      my $successRate=(($row[1]/$row[0])*100);
-      printf "$href->{'cluster'}\t$row[0]\t$row[1]\t$row[2]\t%2.1f%\n",$successRate if ($display==0);
-      printf "<TR><TD>$href->{'cluster'}</TD><TD ALIGN=center>$row[0]</TD><TD ALIGN=center>$row[1]</TD><TD ALIGN=center>$row[2]</TD><TD ALIGN=right>%2.1f%</TD></TR>",$successRate if ($display==1);
+    while(my @row=$sth->fetchrow_array){
+      $sites{$row[3]}="$row[0],$row[1],$row[2]";
     }
-    $sth->finish();
+  }
+}
+
+sub printReport {
+  printf "<HTML><HEAD></HEAD><BODY><Center><H1>$title</H1></CENTER>" if ($display==1);
+  printHeader();
+  foreach my $clusterName (sort keys %sites){
+    print "TEST: $clusterName $sites{$clusterName}\n" if ($debug>=2); 
+    my @cols=split(',', $sites{$clusterName});
+    my $successRate=(($cols[1]/$cols[0])*100);
+    printf "$clusterName\t\t$cols[0]\t$cols[1]\t$cols[2]\t%2.1f%\n",$successRate if ($display==0);
+    printf "<TR><TD>$clusterName</TD><TD ALIGN=center>$cols[0]</TD><TD ALIGN=center>$cols[1]</TD><TD ALIGN=center>$cols[2]</TD><TD ALIGN=right>%2.1f%</TD></TR>",$successRate if ($display==1);
   }
   printf "</TABLE></BODY></HTML>\n" if ($display==1);
 }
 
-
-
-
 # Main
 getToken();
 getDbInfo();
-dbConnect();
+dataGather();
+printReport();

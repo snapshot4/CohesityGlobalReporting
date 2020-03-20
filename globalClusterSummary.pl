@@ -2,11 +2,9 @@
 our $version=1.0.1;
 
 # Author: Brian Doyle
-# Name: globalSummaryByRegion.pl
+# Name: globalClusterSummary.pl
 # Description: This script was written for a Cohesity cluster to give better visibility into a large multisite deployment.  #
-# 1.0.0 - Initial program creation showing num of success, failures, active and success rate.
-# 1.0.1 - Externalized the clusterlist to centralize this list.
-# 1.0.1 - Added Active jobs to the report
+# 1.0.0
 
 # Modules
 use strict;
@@ -19,9 +17,6 @@ use clusterInfo;
 # Global Variables
 my $display=1; #(0-Standard Display, 1-HTML)
 my $debug=0; #(0-No log messages, 1-Info messages, 2-Debug messages)
-my $hoursAgo=24;
-my %types;
-my $typesFilter="*"; #Set to * (All) otherwise comma seperate the different workloads (VMware, NAS...etc)
 my $title="Global Cohesity Report by Type";
 my @clusters=clusterInfo::clusterList();
 
