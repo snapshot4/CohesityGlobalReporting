@@ -18,7 +18,7 @@ use Time::HiRes;
 use clusterInfo;
 
 # Global Variables
-my $display=1; #(0-Standard Display, 1-HTML)
+my $display=0; #(0-Standard Display, 1-HTML)
 my $debug=0; #(0-No log messages, 1-Info messages, 2-Debug messages)
 my $hoursAgo=24;
 my $title="Global Cohesity Report by Site";
@@ -104,7 +104,12 @@ sub printReport {
   foreach my $clusterName (sort keys %sites){
     print "TEST: $clusterName $sites{$clusterName}\n" if ($debug>=2); 
     my @cols=split(',', $sites{$clusterName});
-    my $successRate=(($cols[1]/$cols[0])*100);
+    my $successRate;
+    if($cols[0] > 0){
+      $successRate=(($cols[1]/$cols[0])*100);
+    } else {
+      $successRate=0;
+    }
     printf "$clusterName\t\t$cols[0]\t$cols[1]\t$cols[2]\t%2.1f%\n",$successRate if ($display==0);
     printf "<TR><TD>$clusterName</TD><TD ALIGN=center>$cols[0]</TD><TD ALIGN=center>$cols[1]</TD><TD ALIGN=center>$cols[2]</TD><TD ALIGN=right>%2.1f%</TD></TR>",$successRate if ($display==1);
   }

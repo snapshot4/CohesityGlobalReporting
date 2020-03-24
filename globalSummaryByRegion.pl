@@ -15,7 +15,7 @@ use Time::HiRes;
 use clusterInfo;
 
 # Global Variables
-my $display=1; #(0-Standard Display, 1-HTML)
+my $display=0; #(0-Standard Display, 1-HTML)
 my $debug=0; #(0-No log messages, 1-Info messages, 2-Debug messages)
 my $hoursAgo=24;
 my %regions;
@@ -122,7 +122,12 @@ sub printReport {
       foreach my $clusterName (sort keys %{$regions{$region}}){
         print "TEST: $region $clusterName $regions{$region}{$clusterName}\n" if ($debug>=2); 
         my @cols=split(',', $regions{$region}{$clusterName});
-        my $successRate=(($cols[1]/$cols[0])*100);
+        my $successRate;
+        if($cols[0] > 0){
+          $successRate=(($cols[1]/$cols[0])*100);
+        } else {
+          $successRate=0;
+        }
         my $size=int($cols[4]/1024/1024/1024);
         $size=~s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
         printf "$clusterName\t\t$cols[0]\t$cols[1]\t$cols[2]\t$cols[3]\t%2.1f%,\t\t$cols[4]\n",$successRate if ($display==0);
