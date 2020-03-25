@@ -80,6 +80,7 @@ sub gatherData{
   my $startTimeUsecs=($curTime-$hoursAgoUsecs);
   print "$startTimeUsecs\n" if ($debug>=2);
   foreach my $href (@clusters){
+    my $cluster=$href->{'cluster'};
     my $dbh = DBI -> connect("dbi:Pg:dbname=$href->{'databaseName'};host=$href->{'nodeIp'};port=$href->{'port'}",$href->{'defaultUsername'},$href->{'defaultPassword'}) or die $DBI::errstr;
     # Gather Total Jobs Information
     my $sql = "SELECT SUM(total_num_entities), SUM(success_num_entities), SUM(failure_num_entities), cluster_name, SUM(source_delta_size_bytes)
@@ -93,7 +94,18 @@ sub gatherData{
     my $sth = $dbh->prepare($sql);
     print "Executing Query\n" if ($debug>=2);
     $sth->execute() or die DBI::errstr;
-    while(my @rows=$sth->fetchrow_array){
+    my @rows=$sth->fetchrow_array;
+    $sth->finish();
+    print "TEST: ".@rows.length."\n" if($debug>=2);
+    if(@rows.length == 0){
+      my $sth=$dbh->prepare("SELECT cluster_name FROM reporting.cluster");
+      $sth->execute();
+      my $cluster=$sth->fetch()->[0];
+      $sth->finish();
+      @rows=(0,0,0,"$cluster",0);
+    }
+    print "TEST: ".@rows.length."\n" if($debug>=2);
+    #while(my @rows=$sth->fetchrow_array){
       my $sth=$dbh->prepare("SELECT schema_version FROM reporting.schemaflag");
       $sth->execute();
       my $schemaVersion=$sth->fetch()->[0];
@@ -108,8 +120,8 @@ sub gatherData{
       my $activeJobs=$sth->fetch()->[0];
       $sth->finish();
       $regions{$href->{'region'}}{$rows[3]}="$rows[0],$rows[1],$rows[2],$activeJobs,$rows[4]";
-      print "ROW=$href->{'region'}\t$href->{'cluster'}\t\t$rows[0]\t$rows[1]\t$activeJobs\t$rows[2]\t$rows[4]\n" if ($debug>=2);
-    }
+      print "ROW=$href->{'region'}\t$rows[3]\t\t$rows[0]\t$rows[1]\t$activeJobs\t$rows[2]\t$rows[4]\n" if ($debug>=2);
+    #}
     $dbh->disconnect();
   }
 }
