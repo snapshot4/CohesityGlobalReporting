@@ -88,6 +88,8 @@ sub getCapacityReport {
   $href->{'minUsablePhysicalCapacityBytes'}="$response->{'minUsablePhysicalCapacityBytes'}";
   $href->{'usedPct'}="$response->{'usedPct'}";
   $href->{'avgDailyGrowthRate'}="$response->{'avgDailyGrowthRate'}";
+  $href->{'physicalUsageBytes'}="$response->{'physicalUsageBytes'}->[6]";
+  $href->{'dataReductionRatio'}="$response->{'dataReductionRatio'}->[6]";
   if($href->{'avgDailyGrowthRate'} > 0){
     $href->{'pctDateMsecs'}="$response->{'pctDateMsecs'}";
   } else {
@@ -98,10 +100,10 @@ sub getCapacityReport {
 
 sub printHeader {
   printf "\n                      Cluster Summmary Report                     \n" if ($display==0);
-  printf "Cluster              Version  # of Nodes  Physical(TB)  Useable(TB)  Pct Used  Daily Growth(TB)  Predicted 80%\n" if ($display==0);
-  printf "=======              =======  ==========  ============  ===========  ========  ================  =============\n" if ($display==0);
-  printf "<TABLE BORDER=1 ALIGN=center><TR BGCOLOR=lightgreen><TD ALIGN=center colspan='8'>$_[0] Report</TD></TR>" if ($display==1);
-  printf "<TR BGCOLOR=lightgreen><TD>Cohesity Cluster</TD><TD>Version</TD><TD># of Nodes</TD><TD>Physcial(TB)</TD><TD>Useable(TB)</TD><TD>Pct Used</TD><TD>Daily Growth</TD><TD>Predicted 80%</TD></TR>" if ($display==1);
+  printf "Cluster              Version  # of Nodes  Raw(TB)  Useable(TB)  Used(TB)  Pct Used  Ratio  Daily Growth(TB)  Predicted 80%\n" if ($display==0);
+  printf "=======              =======  ==========  =======  ===========  ========  ========  =====  ================  =============\n" if ($display==0);
+  printf "<TABLE BORDER=1 ALIGN=center><TR BGCOLOR=lightgreen><TD ALIGN=center colspan='10'>$_[0] Report</TD></TR>" if ($display==1);
+  printf "<TR BGCOLOR=lightgreen><TD>Cohesity Cluster</TD><TD>Version</TD><TD># of Nodes</TD><TD>Raw(TB)</TD><TD>Useable(TB)</TD><TD>Used(TB)</TD><TD>Pct Used</TD><TD>Ratio</TD><TD>Daily Growth</TD><TD>Predicted 80%</TD></TR>" if ($display==1);
 }
 
 sub gatherData{
@@ -123,7 +125,7 @@ sub gatherData{
     print "Executing Query\n" if ($debug>=2);
     $sth->execute() or die DBI::errstr;
     while(my @rows=$sth->fetchrow_array){
-      $clusterInfo{$rows[0]}="$rows[1],$numOfNodes,$href->{'physicalCapacityBytes'},$href->{'minUsablePhysicalCapacityBytes'},$href->{'usedPct'},$href->{'avgDailyGrowthRate'},$href->{'pctDateMsecs'}";
+      $clusterInfo{$rows[0]}="$rows[1],$numOfNodes,$href->{'physicalCapacityBytes'},$href->{'minUsablePhysicalCapacityBytes'},$href->{'usedPct'},$href->{'avgDailyGrowthRate'},$href->{'pctDateMsecs'},$href->{'dataReductionRatio'},$href->{'physicalUsageBytes'}";
       print "ROW=$rows[0]\t$rows[1]\t\t$rows[2]" if ($debug>=2);
     }
     $dbh->disconnect();
@@ -148,6 +150,7 @@ sub printReport {
     }
 
     my $physicalCap=$cols[2]/1024/1024/1024/1024;
+    my $usedCap=$cols[8]/1024/1024/1024/1024;
     my $minUseableCap=$cols[3]/1024/1024/1024/1024;
     my $avgDailyGrowth=$cols[5]/1024/1024/1024/1024;
     if($avgDailyGrowth >= $dailyGrowthCritical){
@@ -180,8 +183,8 @@ sub printReport {
     } else {
       $predictStatus="green";
     }
-    printf "%-20s  %-7s  %5d  %11.1f  %11.1f  %10.1f  %13.2f %18s\n",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$pctUsedCap,$avgDailyGrowth,$capDate if ($display==0);
-    printf "<TR><TD ALIGN=center>%s</TD><TD ALIGN=center bgcolor=$versionStatus><FONT color=white>%s</FONT></TD><TD ALIGN=center>%d</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right bgcolor=$pctStatus><FONT color=white>%.1f\%</FONT></TD><TD ALIGN=center bgcolor=$growthStatus><FONT color=white>%.2f</FONT></TD><TD ALIGN=right bgcolor=$predictStatus><FONT color=white>%s</FONT></TD></TR>",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$pctUsedCap,$avgDailyGrowth,$capDate if ($display==1);
+    printf "%-20s  %-7s  %5d  %11.1f  %11.1f  %10.1f  %10.1f  %10.1f %13.2f %18s\n",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==0);
+    printf "<TR><TD ALIGN=center>%s</TD><TD ALIGN=center bgcolor=$versionStatus><FONT color=white>%s</FONT></TD><TD ALIGN=center>%d</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right bgcolor=$pctStatus><FONT color=white>%.1f\%</FONT></TD><TD ALIGN=center>%.1f</TD><TD ALIGN=center bgcolor=$growthStatus><FONT color=white>%.2f</FONT></TD><TD ALIGN=right bgcolor=$predictStatus><FONT color=white>%s</FONT></TD></TR>",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==1);
   }
   printf "</TABLE><br/>\n" if ($display==1);
   printf "</BODY></HTML>\n" if ($display==1);
