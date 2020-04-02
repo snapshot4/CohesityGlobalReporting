@@ -99,7 +99,7 @@ sub getCapacityReport {
 }
 
 sub printHeader {
-  printf "\n                      Cluster Summmary Report                     \n" if ($display==0);
+  printf "\n                                                Global Cluster Summmary Report                                          \n" if ($display==0);
   printf "Cluster              Version  # of Nodes  Raw(TB)  Useable(TB)  Used(TB)  Pct Used  Ratio  Daily Growth(TB)  Predicted 80%\n" if ($display==0);
   printf "=======              =======  ==========  =======  ===========  ========  ========  =====  ================  =============\n" if ($display==0);
   printf "<TABLE BORDER=1 ALIGN=center><TR BGCOLOR=lightgreen><TD ALIGN=center colspan='10'>$_[0] Report</TD></TR>" if ($display==1);
@@ -183,8 +183,8 @@ sub printReport {
     } else {
       $predictStatus="green";
     }
-    printf "%-20s  %-7s  %5d  %11.1f  %11.1f  %10.1f  %10.1f  %10.1f %13.2f %18s\n",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==0);
-    printf "<TR><TD ALIGN=center>%s</TD><TD ALIGN=center bgcolor=$versionStatus><FONT color=white>%s</FONT></TD><TD ALIGN=center>%d</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right bgcolor=$pctStatus><FONT color=white>%.1f\%</FONT></TD><TD ALIGN=center>%.1f</TD><TD ALIGN=center bgcolor=$growthStatus><FONT color=white>%.2f</FONT></TD><TD ALIGN=right bgcolor=$predictStatus><FONT color=white>%s</FONT></TD></TR>",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==1);
+    printf "%-20s  %-7s  %5d  %10.1f  %9.1f  %9.1f  %8.1f  %7.1f %12.2f %19s\n",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==0);
+    printf "<TR><TD ALIGN=center>%s</TD><TD ALIGN=center bgcolor=$versionStatus><FONT color=white>%s</FONT></TD><TD ALIGN=center>%d</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right>%.1f</TD><TD ALIGN=right bgcolor=$pctStatus><FONT color=white>%.1f\%</FONT></TD><TD ALIGN=center>%.1f</TD><TD ALIGN=right bgcolor=$growthStatus><FONT color=white>%.2f</FONT></TD><TD ALIGN=right bgcolor=$predictStatus><FONT color=white>%s</FONT></TD></TR>",$clusterName,$version,$cols[1],$physicalCap,$minUseableCap,$usedCap,$pctUsedCap,$cols[7],$avgDailyGrowth,$capDate if ($display==1);
   }
   printf "</TABLE><br/>\n" if ($display==1);
   printf "</BODY></HTML>\n" if ($display==1);
