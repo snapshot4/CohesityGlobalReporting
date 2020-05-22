@@ -9,12 +9,20 @@ package clusterInfo;
 sub clusterList {
   my @clusters = (
     {
-      'cluster'		=>	'',
-      'username'	=>	'',
-      'password'	=>	'',
-      'domain'		=>	'',
-      'databaseName'	=>	'',
-      'region'		=>	'',
+      'cluster'		=>	'myclustername1.cluster.com',
+      'username'	=>	'readonly',
+      'password'	=>	'somepassword',
+      'domain'		=>	'local',
+      'databaseName'	=>	'postgres',
+      'region'		=>	'Prod',
+    },
+    {
+      'cluster'		=>	'myclustername2.cluster.com',
+      'username'	=>	'readonly',
+      'password'	=>	'somepassword',
+      'domain'		=>	'local',
+      'databaseName'	=>	'postgres',
+      'region'		=>	'DR',
     },
   );
 }
