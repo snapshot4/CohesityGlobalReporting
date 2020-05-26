@@ -24,14 +24,15 @@ my $display=1; #(0-Standard Display, 1-HTML)
 my $debug=0; #(0-No log messages, 1-Info messages, 2-Debug messages)
 my $hoursAgo=24;
 my $title="Global Cohesity Report by Site";
-my $reportLabel="TB"; # Values(TB,GB,MB,KB)
+my $reportLabel="GB"; # Values(TB,GB,MB,KB,B)
 my %sites;
 my @clusters=clusterInfo::clusterList();
 my $reportValue;
-if ($reportLabel eq "TB") { $reportValue=1000*1000*1000; }
-if ($reportLabel eq "GB") { $reportValue=1000*1000; }
-if ($reportLabel eq "MB") { $reportValue=1000; }
-if ($reportLabel eq "KB") { $reportValue=1; }
+if ($reportLabel eq "TB") { $reportValue=1000**4; }
+if ($reportLabel eq "GB") { $reportValue=1000**3; }
+if ($reportLabel eq "MB") { $reportValue=1000**2; }
+if ($reportLabel eq "KB") { $reportValue=1000**1; }
+if ($reportLabel eq "B") { $reportValue=1; }
 
 #Set Environment Variable to no verify certs
 $ENV{'PERL_LWP_SSL_VERIFY_HOSTNAME'} = 0;
